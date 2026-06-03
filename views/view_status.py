@@ -8,7 +8,7 @@ from PIL import ImageFont
 # Loaded once at module import.
 try:
     _TITLE_FONT = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 18
     )
 except OSError:
     _TITLE_FONT = None  # fall back to ctx['font_md'] at render time
