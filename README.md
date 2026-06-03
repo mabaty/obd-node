@@ -56,7 +56,11 @@ be paired and bound to an `rfcomm` device before launch; set `OBD_PORT` in
 
 ## Install
 
-On a fresh Pi (Raspberry Pi OS Bookworm or newer):
+On a fresh Pi (Raspberry Pi OS Bookworm or newer — tested on Debian 13 / Trixie):
+
+> Note: `apt-packages.txt` lists `python3-libgpiod` (Trixie name). On older
+> Bookworm installs the package may still be named `python3-gpiod` — edit
+> the file accordingly before running `install.sh`.
 
 ```bash
 git clone https://github.com/mabaty/obd-node.git ~/obd-node
