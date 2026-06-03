@@ -51,8 +51,6 @@ def render(draw, ctx):
     ip = _sh("hostname -I | awk '{print $1}'")
     up = _short_uptime()
 
-    draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
-
     # Title shows live hostname at 20pt bold (another ~10% smaller than the
     # previous font_md). Pulled down to y=58 so longer hostnames have chord
     # room (the circle widens further from the pole).

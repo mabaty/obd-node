@@ -96,8 +96,6 @@ def render(draw, ctx):
         throttle = int(_fake(ctx, "throttle", 5, 60, jitter=4))
         subtitle = "(simulated)"
 
-    draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
-
     # Title pulled down to y=52 so the glyphs sit inside the circle.
     # Dropping the (simulated/live) subtitle to reclaim vertical room.
     title_font = _TITLE_FONT or f_lg

@@ -66,8 +66,7 @@ def render(draw, ctx):
     else:
         live = True
 
-    # Outer ring + gauge track
-    draw.ellipse([2, 2, 237, 237], outline=(60, 60, 80), width=2)
+    # Gauge track (no decorative outer ring — the arc is the visual frame)
     draw.arc([8, 8, 231, 231], start=150, end=30, fill=(42, 42, 51), width=22)
 
     frac = min(1.0, max(0.0, rpm / RPM_MAX))
