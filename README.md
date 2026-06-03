@@ -88,6 +88,19 @@ cd ~/obd-node
 ./update.sh --full    # also re-runs install.sh (apt + pip)
 ```
 
+## Shell aliases
+
+Quick management shortcuts (`obd-status`, `obd-logs`, `obd-restart`,
+`obd-update`, `obd-debug`, `obd-cli`, ...). Source the file from your
+`~/.bashrc`:
+
+```bash
+echo '[ -f "$HOME/obd-node/shell-aliases.sh" ] && source "$HOME/obd-node/shell-aliases.sh"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+See [shell-aliases.sh](shell-aliases.sh) for the full list.
+
 ## Customize
 
 Edit `~/obd-node/config.py` (created from `config.example.py` on first
