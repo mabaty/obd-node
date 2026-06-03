@@ -1,0 +1,10 @@
+# Optional Python dependencies for obd-node.
+#
+# The app runs without anything in this file — all hard requirements live in
+# apt-packages.txt and are installed via apt. Items below enable optional
+# features (live OBD2 data). install.sh installs them automatically; remove
+# the lines or run install.sh --no-optional to skip.
+
+# Live OBD2 PID reads (view_obd, view_rpm fall back to simulated values
+# without this).
+obd>=0.7.1

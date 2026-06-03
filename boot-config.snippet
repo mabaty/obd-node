@@ -1,0 +1,4 @@
+# obd-node display - SPI + custom CS overlay
+# Appended to /boot/firmware/config.txt by install.sh
+dtparam=spi=on
+dtoverlay=spi0-1cs,cs0_pin=21

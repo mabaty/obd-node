@@ -1,0 +1,11 @@
+obd-node
+Copyright (c) 2026 Matt Baty
+
+This product includes code derived from third-party reference implementations:
+
+* GC9A01 controller init sequence (in gc9a01.py) is adapted from Waveshare's
+  publicly published sample code for their GC9A01-based round display
+  modules. Waveshare's example code is distributed under the BSD 3-Clause
+  License. The Waveshare sample is used here purely as a reference for the
+  display controller's required init command set, which is itself dictated
+  by the GC9A01 hardware datasheet.

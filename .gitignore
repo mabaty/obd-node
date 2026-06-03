@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# User-local config (created from config.example.py on install).
+config.py
+
+# Editor / OS clutter
+.vscode/
+.idea/
+.DS_Store

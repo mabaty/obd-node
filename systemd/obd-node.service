@@ -1,0 +1,16 @@
+[Unit]
+Description=obd-node multi-view display
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# These are templated by install.sh — User=__USER__, paths inside REPO_DIR.
+User=__USER__
+WorkingDirectory=__REPO_DIR__
+ExecStart=/usr/bin/python3 __REPO_DIR__/obd_node.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

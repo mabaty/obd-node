@@ -1,0 +1,4 @@
+python3-lgpio
+python3-gpiod
+python3-pil
+python3-spidev
