@@ -49,7 +49,7 @@ def _load_views():
 def load_fonts():
     base = "/usr/share/fonts/truetype/dejavu"
     sizes = {
-        "font_xl": ("DejaVuSans-Bold.ttf", 88),
+        "font_xl": ("DejaVuSans-Bold.ttf", 72),
         "font_lg": ("DejaVuSans-Bold.ttf", 32),
         "font_md": ("DejaVuSans.ttf", 22),
         "font_sm": ("DejaVuSans.ttf", 16),

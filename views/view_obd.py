@@ -87,34 +87,35 @@ def render(draw, ctx):
 
     draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
 
-    draw.text((120, 30), "CAR DATA", font=f_lg, fill=(251, 191, 36), anchor="mm")
-    draw.text((120, 56), subtitle, font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.line([30, 70, 210, 70], fill=(42, 42, 51), width=1)
+    # Title pulled down to y=52 so the glyphs sit inside the circle.
+    # Dropping the (simulated/live) subtitle to reclaim vertical room.
+    draw.text((120, 52), "CAR DATA", font=f_lg, fill=(251, 191, 36), anchor="mm")
+    draw.line([45, 78, 195, 78], fill=(42, 42, 51), width=1)
 
-    # Speed - left side, big
-    draw.text((70, 92), "MPH", font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((70, 122), f"{speed_mph if speed_mph is not None else '--'}",
+    # Speed - left side
+    draw.text((70, 100), "MPH", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((70, 124), f"{speed_mph if speed_mph is not None else '--'}",
               font=f_lg, fill=(96, 165, 250), anchor="mm")
 
     # Coolant - right side
     color = (74, 222, 128)
     if coolant_f is not None and coolant_f >= 210:
         color = (251, 113, 133)
-    draw.text((170, 92), "COOLANT", font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((170, 122),
+    draw.text((170, 100), "COOLANT", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((170, 124),
               f"{coolant_f}\u00b0F" if coolant_f is not None else "--",
               font=f_md, fill=color, anchor="mm")
 
-    draw.line([30, 158, 210, 158], fill=(42, 42, 51), width=1)
+    draw.line([45, 150, 195, 150], fill=(42, 42, 51), width=1)
 
     # Voltage - bottom left
-    draw.text((70, 178), "BATT", font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((70, 204),
+    draw.text((70, 170), "BATT", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((70, 194),
               f"{voltage:.1f}V" if voltage is not None else "--",
               font=f_md, fill=(74, 222, 128), anchor="mm")
 
     # Throttle - bottom right
-    draw.text((170, 178), "THROTTLE", font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((170, 204),
+    draw.text((170, 170), "THROTTLE", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((170, 194),
               f"{int(throttle)}%" if throttle is not None else "--",
               font=f_md, fill=(251, 191, 36), anchor="mm")
