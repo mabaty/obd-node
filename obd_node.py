@@ -50,7 +50,7 @@ def load_fonts():
     base = "/usr/share/fonts/truetype/dejavu"
     try:
         return {
-            "font_xl": ImageFont.truetype(f"{base}/DejaVuSans-Bold.ttf", 56),
+            "font_xl": ImageFont.truetype(f"{base}/DejaVuSans-Bold.ttf", 80),
             "font_lg": ImageFont.truetype(f"{base}/DejaVuSans-Bold.ttf", 40),
             "font_md": ImageFont.truetype(f"{base}/DejaVuSans.ttf", 26),
             "font_sm": ImageFont.truetype(f"{base}/DejaVuSans.ttf", 20),

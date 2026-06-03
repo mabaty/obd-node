@@ -66,8 +66,9 @@ def render(draw, ctx):
     else:
         live = True
 
-    draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
-    draw.arc([20, 20, 220, 220], start=150, end=30, fill=(42, 42, 51), width=10)
+    # Outer ring + gauge track
+    draw.ellipse([2, 2, 237, 237], outline=(60, 60, 80), width=2)
+    draw.arc([8, 8, 231, 231], start=150, end=30, fill=(42, 42, 51), width=22)
 
     frac = min(1.0, max(0.0, rpm / RPM_MAX))
     sweep_deg = 240 * frac
@@ -79,9 +80,10 @@ def render(draw, ctx):
     else:
         fill = (251, 113, 133)
     if sweep_deg > 1:
-        draw.arc([20, 20, 220, 220], start=150, end=end_angle, fill=fill, width=10)
+        draw.arc([8, 8, 231, 231], start=150, end=end_angle, fill=fill, width=22)
 
-    draw.text((120, 100), "RPM" if live else "RPM (sim)",
+    # Labels: small "RPM" up top, big number center, redline reference bottom
+    draw.text((120, 70), "RPM" if live else "RPM (sim)",
               font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((120, 140), f"{rpm}", font=f_xl, fill=(255, 255, 255), anchor="mm")
-    draw.text((120, 185), f"/{RPM_MAX}", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((120, 132), f"{rpm}", font=f_xl, fill=(255, 255, 255), anchor="mm")
+    draw.text((120, 188), f"/ {RPM_MAX}", font=f_sm, fill=(110, 108, 100), anchor="mm")
