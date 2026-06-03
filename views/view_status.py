@@ -2,6 +2,17 @@
 import socket
 import subprocess
 
+from PIL import ImageFont
+
+# Title font sized 1 step below font_md (22pt) per Matt's iterative tuning.
+# Loaded once at module import.
+try:
+    _TITLE_FONT = ImageFont.truetype(
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20
+    )
+except OSError:
+    _TITLE_FONT = None  # fall back to ctx['font_md'] at render time
+
 NAME = "STATUS"
 REFRESH_SEC = 5.0
 
@@ -42,10 +53,11 @@ def render(draw, ctx):
 
     draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
 
-    # Title is now the live hostname at font_md (22pt, ~31% smaller than the
-    # previous 32pt). Pulled down to y=58 to give long hostnames more chord
-    # room (the circle is wider further from the pole).
-    draw.text((120, 58), hostname, font=f_md, fill=(251, 113, 133), anchor="mm")
+    # Title shows live hostname at 20pt bold (another ~10% smaller than the
+    # previous font_md). Pulled down to y=58 so longer hostnames have chord
+    # room (the circle widens further from the pole).
+    title_font = _TITLE_FONT or f_md
+    draw.text((120, 58), hostname, font=title_font, fill=(251, 113, 133), anchor="mm")
     draw.line([45, 78, 195, 78], fill=(42, 42, 51), width=1)
 
     # Temp + status row
