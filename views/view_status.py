@@ -1,4 +1,5 @@
-"""Status view - host stats (temp, IP, uptime)."""
+"""Status view - host stats (hostname, temp, IP, uptime)."""
+import socket
 import subprocess
 
 NAME = "STATUS"
@@ -31,18 +32,20 @@ def _short_uptime():
 
 
 def render(draw, ctx):
-    f_lg = ctx["font_lg"]
     f_md = ctx["font_md"]
     f_sm = ctx["font_sm"]
 
+    hostname = socket.gethostname()
     temp = _sh("cat /sys/class/thermal/thermal_zone0/temp | awk '{printf \"%.0f\", $1/1000}'")
     ip = _sh("hostname -I | awk '{print $1}'")
     up = _short_uptime()
 
     draw.ellipse([4, 4, 235, 235], outline=(60, 60, 80), width=3)
 
-    # Title - down at y=52 so the ~40px-tall glyphs stay clear of the curve
-    draw.text((120, 52), "OBD-NODE", font=f_lg, fill=(251, 113, 133), anchor="mm")
+    # Title is now the live hostname at font_md (22pt, ~31% smaller than the
+    # previous 32pt). Pulled down to y=58 to give long hostnames more chord
+    # room (the circle is wider further from the pole).
+    draw.text((120, 58), hostname, font=f_md, fill=(251, 113, 133), anchor="mm")
     draw.line([45, 78, 195, 78], fill=(42, 42, 51), width=1)
 
     # Temp + status row
