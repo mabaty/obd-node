@@ -27,7 +27,10 @@ if [[ "${1:-}" == "--full" ]]; then
   exec ./install.sh
 fi
 
-if ! systemctl list-unit-files | grep -q "^${SERVICE_NAME}"; then
+# `systemctl cat` exits 0 if the unit exists, non-zero (with message on
+# stderr) if not — more reliable than parsing list-unit-files in a pipe
+# under set -e / pipefail.
+if ! systemctl cat "$SERVICE_NAME" >/dev/null 2>&1; then
   echo "ERROR: ${SERVICE_NAME} is not installed. Run ./install.sh first." >&2
   exit 1
 fi
