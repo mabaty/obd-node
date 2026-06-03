@@ -82,15 +82,17 @@ def render(draw, ctx):
     live = _OBD_AVAILABLE and not config.OBD_DISABLED and _connect() is not None
 
     if live:
-        speed = _query(_obd.commands.SPEED)             # km/h
+        iat = _query(_obd.commands.INTAKE_TEMP)         # C
         coolant = _query(_obd.commands.COOLANT_TEMP)    # C
         voltage = _query(_obd.commands.CONTROL_MODULE_VOLTAGE)
         throttle = _query(_obd.commands.THROTTLE_POS)
-        speed_mph = int(speed * 0.621371) if speed is not None else None
+        iat_f = int(iat * 9 / 5 + 32) if iat is not None else None
         coolant_f = int(coolant * 9 / 5 + 32) if coolant is not None else None
         subtitle = "live"
     else:
-        speed_mph = int(_fake(ctx, "speed", 0, 75, jitter=3))
+        # Supercharged R53: IAT swings from ambient (~75 F) to 140-170 F
+        # under sustained boost. Wider band makes the placeholder feel real.
+        iat_f = int(_fake(ctx, "iat", 80, 165, jitter=2))
         coolant_f = int(_fake(ctx, "coolant", 180, 215, jitter=1))
         voltage = _fake(ctx, "voltage", 13.6, 14.4, jitter=0.05)
         throttle = int(_fake(ctx, "throttle", 5, 60, jitter=4))
@@ -102,10 +104,17 @@ def render(draw, ctx):
     draw.text((120, 52), "Telemetry", font=title_font, fill=(251, 191, 36), anchor="mm")
     draw.line([45, 78, 195, 78], fill=(42, 42, 51), width=1)
 
-    # Speed - left side
-    draw.text((70, 100), "MPH", font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((70, 124), f"{speed_mph if speed_mph is not None else '--'}",
-              font=f_lg, fill=(96, 165, 250), anchor="mm")
+    # Intake air temp - left side. Tints toward red as IAT climbs (heat
+    # soak / sustained boost on a supercharged engine).
+    iat_color = (96, 165, 250)
+    if iat_f is not None and iat_f >= 140:
+        iat_color = (251, 191, 36)
+    if iat_f is not None and iat_f >= 160:
+        iat_color = (251, 113, 133)
+    draw.text((70, 100), "IAT", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    draw.text((70, 124),
+              f"{iat_f}\u00b0F" if iat_f is not None else "--",
+              font=f_md, fill=iat_color, anchor="mm")
 
     # Coolant - right side
     color = (74, 222, 128)
