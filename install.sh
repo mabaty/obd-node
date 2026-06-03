@@ -55,7 +55,9 @@ echo
 echo "[2/5] Checking $BOOT_CONFIG ..."
 NEEDS_REBOOT=0
 if [[ -f "$BOOT_CONFIG" ]]; then
-  if ! grep -q "obd-node display" "$BOOT_CONFIG"; then
+  # Check for the actual functional line, not the marker comment, so we
+  # don't duplicate config if the user already set SPI/CS up manually.
+  if ! grep -qE '^\s*dtoverlay=spi0-1cs,cs0_pin=21' "$BOOT_CONFIG"; then
     echo "  Appending SPI + CS overlay lines."
     need_sudo bash -c "cat '$REPO_DIR/boot-config.snippet' >> '$BOOT_CONFIG'"
     NEEDS_REBOOT=1
