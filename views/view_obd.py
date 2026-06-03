@@ -6,7 +6,18 @@ renders on a non-car Pi.
 """
 import random
 
+from PIL import ImageFont
+
 import config
+
+# Title font sized 25% smaller than the previous font_lg (32pt) per Matt's
+# tuning. Loaded once at module import.
+try:
+    _TITLE_FONT = ImageFont.truetype(
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24
+    )
+except OSError:
+    _TITLE_FONT = None  # fall back to ctx['font_lg'] at render time
 
 try:
     import obd as _obd  # python-OBD
@@ -89,7 +100,8 @@ def render(draw, ctx):
 
     # Title pulled down to y=52 so the glyphs sit inside the circle.
     # Dropping the (simulated/live) subtitle to reclaim vertical room.
-    draw.text((120, 52), "CAR DATA", font=f_lg, fill=(251, 191, 36), anchor="mm")
+    title_font = _TITLE_FONT or f_lg
+    draw.text((120, 52), "Telemetry", font=title_font, fill=(251, 191, 36), anchor="mm")
     draw.line([45, 78, 195, 78], fill=(42, 42, 51), width=1)
 
     # Speed - left side
