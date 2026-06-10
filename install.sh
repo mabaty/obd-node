@@ -55,14 +55,21 @@ echo
 echo "[2/5] Checking $BOOT_CONFIG ..."
 NEEDS_REBOOT=0
 if [[ -f "$BOOT_CONFIG" ]]; then
-  # Check for the actual functional line, not the marker comment, so we
-  # don't duplicate config if the user already set SPI/CS up manually.
-  if ! grep -qE '^\s*dtoverlay=spi0-1cs,cs0_pin=21' "$BOOT_CONFIG"; then
-    echo "  Appending SPI + CS overlay lines."
+  # Check for SPI enable — no custom overlay needed for SSD1351
+  # (CS is on default GPIO8/CE0). The old GC9A01 used spi0-1cs,cs0_pin=21
+  # which we should remove if present.
+  if ! grep -qE '^\s*dtparam=spi=on' "$BOOT_CONFIG"; then
+    echo "  Enabling SPI."
     need_sudo bash -c "cat '$REPO_DIR/boot-config.snippet' >> '$BOOT_CONFIG'"
     NEEDS_REBOOT=1
   else
-    echo "  Already configured. Skipping."
+    echo "  SPI already enabled. Skipping."
+  fi
+  # Remove old GC9A01 custom CS overlay if it's still there
+  if grep -qE '^\s*dtoverlay=spi0-1cs,cs0_pin=21' "$BOOT_CONFIG"; then
+    echo "  Removing old GC9A01 CS overlay (spi0-1cs,cs0_pin=21)."
+    need_sudo sed -i '/dtoverlay=spi0-1cs,cs0_pin=21/d' "$BOOT_CONFIG"
+    NEEDS_REBOOT=1
   fi
 else
   echo "  WARN: $BOOT_CONFIG not found (not a Pi?). Skipping boot config."

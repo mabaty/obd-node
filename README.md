@@ -1,169 +1,144 @@
 # obd-node
 
-Raspberry Pi multi-view display node with an optional OBD2 car-data view.
+Multi-view car telemetry + node status display for Raspberry Pi, built around
+a **Waveshare 1.5″ SSD1351 128×128 RGB OLED** and a physical button to cycle views.
 
-Drives a **GC9A01 240×240 round SPI display** and cycles between view
-modules via a single tactile button. Comes with three views out of the box:
+Four views, inspired by BTI-style race gauges — dense, text-first, threshold-colored:
 
-- **STATUS** — host stats: hostname, CPU temp, IP, uptime
-- **OBD2** — speed / coolant / battery voltage / throttle (live via
-  `python-OBD` if the optional dep is installed and a dongle is reachable,
-  otherwise simulated)
-- **RPM** — big-text RPM gauge with color-shifting arc (live or simulated)
-
-Tested on Raspberry Pi 5 (Bookworm).
-
-![demo placeholder — add a photo once you have one]()
+1. **Telemetry** — dual-column OBD2 data (RPM, IAT, coolant, battery, throttle, MAP)
+2. **RPM** — big centered number, color-coded by threshold
+3. **Status** — node health (hostname, CPU temp, IP, uptime, load, disk)
+4. **Terminal** — tails `/tmp/obd-terminal.log` for remote troubleshooting
 
 ## Hardware
 
-### Display (GC9A01, 240×240 round, SPI)
+- Raspberry Pi 5 (8 GB recommended)
+- Waveshare 1.5″ RGB OLED Module (SSD1351, 128×128, 65K color, 4-wire SPI)
+- One momentary tactile button (view cycle)
 
-| Display | Pi pin | GPIO | Notes |
+### Wiring — SSD1351 OLED
+
+| OLED Pin | Pi Board Pin | Pi GPIO | Notes |
 |---|---|---|---|
 | VCC | 1 | 3.3V | |
 | GND | 6 | GND | |
-| SCL/CLK | 23 | GPIO11 (SCLK) | |
-| SDA/MOSI | 19 | GPIO10 | |
-| RES | 22 | GPIO25 | |
-| DC | 18 | GPIO24 | |
-| CS | **40** | **GPIO21** | non-default — see boot config below |
-| BL | 12 | GPIO18 | **100Ω resistor in series, mandatory** |
+| DIN | 19 | GPIO10 (MOSI) | |
+| SCL | 23 | GPIO11 (SCLK) | |
+| CS | 24 | GPIO8 (CE0) | Default SPI0 CE0 — kernel managed |
+| DC | 22 | GPIO25 | |
+| RST | 13 | GPIO27 | |
 
-> The 100Ω BL series resistor isn't optional. Driving the backlight LEDs
-> directly off 3.3V will cook the panel.
+**No backlight pin** — OLED pixels are self-emissive.
 
-### Button
+⚠️ **If upgrading from the GC9A01 round display**, note these pin changes:
+- **CS** moved from GPIO21 (pin 40) → GPIO8 (pin 24)
+- **DC** moved from GPIO24 (pin 18) → GPIO25 (pin 22)
+- **RST** moved from GPIO25 (pin 22) → GPIO27 (pin 13)
+- **No backlight wire** (the GC9A01 had BL on GPIO18)
+- Remove the old `dtoverlay=spi0-1cs,cs0_pin=21` from boot config
 
-| Button leg | Pi pin | GPIO | Notes |
+### Wiring — Button
+
+| Button Leg | Pi Board Pin | GPIO | Notes |
 |---|---|---|---|
-| One side | 36 | GPIO16 | input, pull-up (in software) |
-| Other side | 34 | GND | |
+| Side A | 36 | GPIO16 | Input, pull-up, falling-edge |
+| Side B | 34 | GND | |
 
-Any momentary tactile switch works. With a 4-pin tactile switch, pick legs
-on opposite sides of the long edge (the two pins on the same short edge
-are shorted together internally).
-
-Override `BUTTON_PIN` / `BUTTON_CHIP` in `config.py` to use a different
-GPIO line.
-
-### OBD2 (optional)
-
-Any ELM327-compatible USB or Bluetooth dongle. Bluetooth dongles need to
-be paired and bound to an `rfcomm` device before launch; set `OBD_PORT` in
-`config.py` to point at the serial node (e.g. `/dev/rfcomm0`,
-`/dev/ttyUSB0`).
+4-pin tactile switch — pick legs on opposite sides of the long edge.
 
 ## Install
-
-On a fresh Pi (Raspberry Pi OS Bookworm or newer — tested on Debian 13 / Trixie):
-
-> Note: `apt-packages.txt` lists `python3-libgpiod` (Trixie name). On older
-> Bookworm installs the package may still be named `python3-gpiod` — edit
-> the file accordingly before running `install.sh`.
 
 ```bash
 git clone https://github.com/mabaty/obd-node.git ~/obd-node
 cd ~/obd-node
-./install.sh
-sudo reboot   # only the first time (for the SPI overlay)
+sudo ./install.sh        # apt + boot config + pip + systemd
+sudo reboot              # first time only (SPI enable)
 ```
 
-`install.sh` is idempotent and safe to re-run. Flags:
+Re-running `install.sh` is safe — every step is idempotent.
 
-- `--no-optional` — skip the `python-OBD` pip install
-- `--no-systemd` — don't install or enable the systemd unit
+## Usage
 
-After reboot, the service comes up automatically. View logs:
+The systemd service `obd-node` starts on boot:
 
 ```bash
+sudo systemctl status obd-node
+sudo systemctl restart obd-node
 sudo journalctl -u obd-node -f
 ```
+
+Press the button to cycle: Telemetry → RPM → Status → Terminal → Telemetry
+
+### Terminal view
+
+Pipe text to the log file from your phone or laptop:
+
+```bash
+ssh matt@192.168.15.62 "echo '> systemctl status obd-node' >> /tmp/obd-terminal.log"
+ssh matt@192.168.15.62 "systemctl is-active obd-node >> /tmp/obd-terminal.log"
+```
+
+Lines starting with `>` render in yellow (commands), errors in red.
+
+## Configure
+
+Edit `~/obd-node/config.py` (gitignored, created from `config.example.py`):
+
+- `BUTTON_PIN` — GPIO for the cycle button (default 16)
+- `ENABLED_VIEWS` — ordered list of view modules
+- `OBD_PORT` — serial device for ELM327 (e.g. `/dev/ttyUSB0`)
+- `OBD_DISABLED` — force-disable OBD2 even if library is installed
 
 ## Update
 
 ```bash
-cd ~/obd-node
-./update.sh           # git pull + restart service
-./update.sh --full    # also re-runs install.sh (apt + pip)
+cd ~/obd-node && ./update.sh
+# or: obd-update (if shell aliases are sourced)
 ```
 
-## Shell aliases
+Pulls from GitHub and restarts the service. Fails loudly if the restart doesn't take.
 
-Quick management shortcuts (`obd-status`, `obd-logs`, `obd-restart`,
-`obd-update`, `obd-debug`, `obd-cli`, ...). Source the file from your
-`~/.bashrc`:
+## Development
 
-```bash
-echo '[ -f "$HOME/obd-node/shell-aliases.sh" ] && source "$HOME/obd-node/shell-aliases.sh"' >> ~/.bashrc
-source ~/.bashrc
+Edit locally on lenox-alpha at `~/.openclaw/workspace/repos/obd-node/`, push to
+GitHub, then `obd-update` on the Pi.
+
+### Adding a view
+
+1. Create `views/view_yourname.py` with `NAME`, `REFRESH_SEC`, and `render(draw, ctx)`
+2. Add `"view_yourname"` to `config.ENABLED_VIEWS`
+3. The `ctx` dict provides fonts: `font_xl` (36pt bold), `font_lg` (14pt bold),
+   `font_md` (11pt mono), `font_sm` (9pt mono), `font_xs` (8pt mono)
+4. Canvas is 128×128, background is always `(0, 0, 0)`
+
+### Design language
+
+- **Numbers first** — values are the star, labels are just context
+- **High contrast** — white values on true-black OLED
+- **Threshold coloring** — green (normal) → yellow (warning) → red (danger)
+- **No decorative arcs or animations** — pure function
+- **IP footer** on every view — always know where the Pi is
+
+## Boot config
+
+The installer appends to `/boot/firmware/config.txt`:
+
+```
+dtparam=spi=on
 ```
 
-See [shell-aliases.sh](shell-aliases.sh) for the full list.
+No custom SPI overlay needed — CS is on the default GPIO8/CE0.
 
-## Customize
+## Rollback
 
-Edit `~/obd-node/config.py` (created from `config.example.py` on first
-install — it's gitignored so your tweaks survive updates).
-
-Common changes:
-
-- **Different button pin:** set `BUTTON_PIN`
-- **Different view order or subset:** edit `ENABLED_VIEWS`
-- **Force-disable OBD2:** set `OBD_DISABLED = True` (uses simulated values
-  even if the dongle is plugged in — useful for testing on the bench)
-- **OBD2 port:** set `OBD_PORT = "/dev/rfcomm0"` (or similar)
-
-Restart the service after editing config:
-
-```bash
-sudo systemctl restart obd-node
-```
-
-## Write your own view
-
-Drop a new module in `views/`, e.g. `views/view_weather.py`:
-
-```python
-NAME = "WEATHER"
-REFRESH_SEC = 60.0
-
-def render(draw, ctx):
-    f_lg = ctx["font_lg"]
-    draw.text((120, 120), "72°F", font=f_lg, fill=(255, 255, 255), anchor="mm")
-```
-
-Then add `"view_weather"` to `ENABLED_VIEWS` in `config.py` and restart.
-
-The `ctx` dict carries pre-loaded fonts (`font_xl`, `font_lg`, `font_md`,
-`font_sm`) and is a safe place to cache per-view state across frames.
-
-## Uninstall
+To revert to the old GC9A01 display, switch to the `gc9a01` git branch or
+use the old systemd units still on disk:
 
 ```bash
 sudo systemctl disable --now obd-node
-sudo rm /etc/systemd/system/obd-node.service
-sudo systemctl daemon-reload
-rm -rf ~/obd-node
+sudo systemctl enable --now lenox-display   # if still present
 ```
-
-The boot config snippet stays in `/boot/firmware/config.txt` unless you
-remove it by hand — harmless on its own.
-
-## Known gotchas
-
-See [findings/lenox-mobile-display.md](https://github.com/mabaty/lenox-docs/blob/main/findings/lenox-mobile-display.md)
-in the lenox-docs repo for the full debugging story. Highlights:
-
-- **`lgpio` defaults output pins to LOW** when claimed, even if you intend
-  ACTIVE. Use `gpiod` 2.x instead. (Already done in this repo.)
-- **GC9A01 clones often need SPI mode 3, not mode 0.**
-- **Don't manually toggle CS** when the `spi0-1cs` overlay manages it.
-- **Camera autodetect (`camera_auto_detect=1`)** claims GPIO 22/24/25/27
-  at boot — collides with the display's RES/DC pins unless you disable
-  the camera or pick different pins.
 
 ## License
 
-[MIT](LICENSE). The GC9A01 init sequence is adapted from Waveshare's
-BSD-3-licensed sample code — see [NOTICE](NOTICE).
+MIT. SSD1351 init sequence derived from Waveshare demo code (BSD-3).

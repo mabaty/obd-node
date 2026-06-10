@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """obd-node multi-view display app.
 
-Cycles between view modules in views/ on button press. Falls back to
-status-only operation if the button hardware fails.
+Cycles between view modules in views/ on button press. Built for
+SSD1351 128x128 RGB OLED (replaces GC9A01 240x240 round display).
+
+Views: Telemetry (BTI-style) → RPM (big number) → Status → Terminal
 """
 import importlib
 import sys
@@ -26,11 +28,15 @@ except ImportError:
                 os.path.join(REPO_DIR, "config.py"))
     import config  # noqa: F401
 
-from gc9a01 import GC9A01
+from ssd1351 import SSD1351
 from PIL import Image, ImageDraw, ImageFont
 
 import gpiod
 from gpiod.line import Direction, Bias, Edge
+
+# Display dimensions — SSD1351 128x128
+DISPLAY_W = 128
+DISPLAY_H = 128
 
 
 def _load_views():
@@ -47,20 +53,30 @@ def _load_views():
 
 
 def load_fonts():
-    base = "/usr/share/fonts/truetype/dejavu"
+    """Load DejaVu Sans + Sans Mono fonts sized for 128x128 display."""
+    base_sans = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    base_sans_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    base_mono = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+    base_mono_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+
     sizes = {
-        "font_xl": ("DejaVuSans-Bold.ttf", 72),
-        "font_lg": ("DejaVuSans-Bold.ttf", 32),
-        "font_md": ("DejaVuSans.ttf", 22),
-        "font_sm": ("DejaVuSans.ttf", 16),
+        # Big number for RPM view
+        "font_xl": (base_sans_bold, 36),
+        # Large values and section headers
+        "font_lg": (base_sans_bold, 14),
+        # Primary data font for telemetry rows
+        "font_md": (base_mono, 11),
+        # Labels and small text
+        "font_sm": (base_mono, 9),
+        # Tiny footer text
+        "font_xs": (base_mono, 8),
     }
     out = {}
     for key, (fname, size) in sizes.items():
-        path = f"{base}/{fname}"
         try:
-            out[key] = ImageFont.truetype(path, size)
+            out[key] = ImageFont.truetype(fname, size)
         except OSError as e:
-            print(f"[fonts] FAILED to load {path}: {e}. "
+            print(f"[fonts] FAILED to load {fname}: {e}. "
                   f"Install fonts-dejavu (apt install fonts-dejavu) "
                   f"and restart. Falling back to bitmap default for {key}.",
                   flush=True)
@@ -109,7 +125,7 @@ def main():
     views = _load_views()
     print(f"[obd-node] loaded {len(views)} view(s): {[v.NAME for v in views]}", flush=True)
 
-    d = GC9A01()
+    d = SSD1351()
     fonts = load_fonts()
     ctx = dict(fonts)
 
@@ -131,22 +147,22 @@ def main():
     try:
         while not stop_flag["stop"]:
             view = views[state["idx"]]
-            img = Image.new("RGB", (240, 240), (12, 12, 15))
+            img = Image.new("RGB", (DISPLAY_W, DISPLAY_H), (0, 0, 0))
             draw = ImageDraw.Draw(img)
             try:
                 view.render(draw, ctx)
             except Exception as e:
-                draw.text((120, 120), f"ERR: {view.NAME}",
-                          font=fonts["font_md"], fill=(255, 80, 80), anchor="mm")
+                draw.text((64, 64), f"ERR:{view.NAME}",
+                          font=fonts["font_sm"], fill=(251, 80, 80), anchor="mm")
                 print(f"[render] {view.NAME} raised: {e!r}", flush=True)
             d.show(img)
 
             wake.wait(timeout=view.REFRESH_SEC)
             wake.clear()
     finally:
-        print("[obd-node] stopping, blanking backlight", flush=True)
+        print("[obd-node] stopping, clearing display", flush=True)
         try:
-            d.backlight(False)
+            d.clear()
         except Exception:
             pass
         btn.stop()

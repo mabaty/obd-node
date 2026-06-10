@@ -1,7 +1,7 @@
-"""RPM gauge view.
+"""RPM view — big centered number, no decorative arcs.
 
-Live RPM via python-OBD if available; otherwise a sweeping fake value so
-the gauge animation remains visible on a non-car Pi.
+Just the RPM value, large and color-coded by threshold.
+Live via python-OBD if available; otherwise fake sweeping value.
 """
 import time
 
@@ -14,9 +14,9 @@ except ImportError:
     _OBD_AVAILABLE = False
 
 NAME = "RPM"
-REFRESH_SEC = 0.1  # gauge should feel live
+REFRESH_SEC = 0.1
 
-RPM_MAX = 7000  # tune per-vehicle
+RPM_MAX = 7000
 
 _connection = None
 
@@ -48,8 +48,9 @@ def _fake_rpm():
 
 
 def render(draw, ctx):
-    f_sm = ctx["font_sm"]
-    f_xl = ctx["font_xl"]
+    f_xl = ctx["font_xl"]  # 36pt bold
+    f_sm = ctx["font_sm"]   # 9pt mono
+    f_xs = ctx["font_xs"]   # 8pt mono
 
     conn = _connect()
     rpm = None
@@ -66,23 +67,40 @@ def render(draw, ctx):
     else:
         live = True
 
-    # Gauge track (no decorative outer ring — the arc is the visual frame)
-    draw.arc([8, 8, 231, 231], start=150, end=30, fill=(42, 42, 51), width=22)
-
-    frac = min(1.0, max(0.0, rpm / RPM_MAX))
-    sweep_deg = 240 * frac
-    end_angle = (150 + sweep_deg) % 360
-    if frac < 0.6:
-        fill = (74, 222, 128)
-    elif frac < 0.85:
-        fill = (251, 191, 36)
+    # Color by threshold
+    if rpm < 5500:
+        rpm_color = (255, 255, 255)
+    elif rpm < 6500:
+        rpm_color = (251, 191, 36)
     else:
-        fill = (251, 113, 133)
-    if sweep_deg > 1:
-        draw.arc([8, 8, 231, 231], start=150, end=end_angle, fill=fill, width=22)
+        rpm_color = (251, 113, 133)
 
-    # Labels: small "RPM" up top, big number center, redline reference bottom
-    draw.text((120, 70), "RPM" if live else "RPM (sim)",
-              font=f_sm, fill=(110, 108, 100), anchor="mm")
-    draw.text((120, 132), f"{rpm}", font=f_xl, fill=(255, 255, 255), anchor="mm")
-    draw.text((120, 188), f"/ {RPM_MAX}", font=f_sm, fill=(110, 108, 100), anchor="mm")
+    # Label at top
+    draw.text((64, 20), "RPM" if live else "RPM (sim)",
+              font=f_sm, fill=(110, 108, 100), anchor="mt")
+
+    # Big number centered
+    draw.text((64, 68), f"{rpm}",
+              font=f_xl, fill=rpm_color, anchor="mm")
+
+    # Redline reference
+    draw.text((64, 100), f"/ {RPM_MAX}",
+              font=f_sm, fill=(110, 108, 100), anchor="mt")
+
+    # Footer: IP
+    ip = _get_ip_cached(ctx)
+    draw.text((64, 119), ip, font=f_xs, fill=(96, 165, 250), anchor="mb")
+
+
+def _get_ip_cached(ctx):
+    """Get IP once per view cycle and cache in ctx."""
+    if "_ip" not in ctx:
+        import socket
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ctx["_ip"] = s.getsockname()[0]
+            s.close()
+        except Exception:
+            ctx["_ip"] = "?"
+    return ctx["_ip"]

@@ -2,6 +2,8 @@
 
 Copy this file to `config.py` (which is gitignored) and edit values to match
 your hardware. The install script does the copy for you on first run.
+
+=== SSD1351 128x128 RGB OLED version ===
 """
 
 # --- Button ----------------------------------------------------------------
@@ -22,9 +24,10 @@ BUTTON_DEBOUNCE_MS = 50
 # Ordered list of view module names (under views/) to cycle through.
 # Comment out or reorder to customize. The button cycles top-to-bottom.
 ENABLED_VIEWS = [
-    "view_status",
-    "view_obd",
+    "view_telemetry",
     "view_rpm",
+    "view_status",
+    "view_terminal",
 ]
 
 # --- OBD2 (optional) -------------------------------------------------------
