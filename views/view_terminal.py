@@ -18,14 +18,42 @@ TERMINAL_LOG = "/tmp/obd-terminal.log"
 MAX_LINES = 12  # lines that fit at 9pt mono on 128px
 
 
+def _seed_log(path):
+    """Create the log file with a welcome banner if it does not exist."""
+    import datetime, socket
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+    except Exception:
+        ip = "?.?.?.?"
+    now = datetime.datetime.now().strftime("%H:%M:%S")
+    banner = [
+        f"[boot {now}]",
+        f"host {socket.gethostname()}",
+        f"ip   {ip}",
+        "",
+        "> ssh matt@<ip>",
+        "> echo cmd >>",
+        "  /tmp/obd-",
+        "  terminal.log",
+        "",
+        "[waiting for input]",
+    ]
+    try:
+        with open(path, "w") as f:
+            f.write("\n".join(banner) + "\n")
+    except Exception:
+        pass
+
+
 def _read_tail(path, max_lines):
-    """Read the last max_lines from the log file."""
+    """Read the last max_lines from the log file. Auto-seed if missing."""
     if not os.path.exists(path):
-        return ["[no log file]"]
+        _seed_log(path)
     try:
         with open(path, "r") as f:
             lines = f.readlines()
-        # Strip trailing newlines, limit to max_lines
+        if not lines:
+            return ["[empty log]"]
         return [l.rstrip() for l in lines[-max_lines:]]
     except Exception as e:
         return [f"[read err: {e}]"]
@@ -36,14 +64,12 @@ def render(draw, ctx):
     f_xs = ctx["font_xs"]   # 8pt mono
     f_lg = ctx["font_lg"]   # 14pt bold
 
-    # Clear buffer on first render of this view
+    # On first render of this view: seed the log with a fresh banner.
+    # Previously we truncated to empty, which left the screen blank
+    # until the user SSH-injected something.
     first = ctx.setdefault("_term_first", True)
     if first:
-        try:
-            if os.path.exists(TERMINAL_LOG):
-                open(TERMINAL_LOG, "w").close()
-        except Exception:
-            pass
+        _seed_log(TERMINAL_LOG)
         ctx["_term_first"] = False
 
     # Header
