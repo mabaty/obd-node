@@ -27,7 +27,6 @@ ENABLED_VIEWS = [
     "view_telemetry",
     "view_rpm",
     "view_status",
-    "view_terminal",
 ]
 
 # --- OBD2 (optional) -------------------------------------------------------
